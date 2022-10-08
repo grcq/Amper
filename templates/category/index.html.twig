@@ -1,0 +1,46 @@
+{% extends '@!EasyAdmin/crud/index.html.twig' %}
+
+{#% extends '@!EasyAdmin/layout.html.twig' %}
+
+{% block content %}
+    {% block content_header %}
+        <h1>Websites</h1>
+        <br>
+    {% endblock %}
+    <br>
+    <a href="/dashboard?menuIndex=2&routeName=app_category_new&submenuIndex=-1"><span class="fa fa-plus"></span> Add Site</a>
+    <br>
+
+    {% block main %}
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Id</th>
+                    <th>Name</th>
+                    <th>Files Path</th>
+                    <th>Domain</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for category in categories %}
+                <tr>
+                    <td>{{ category.id }}</td>
+                    <td>{{ category.name }}</td>
+                    <td>{{ category.filesPath }}</td>
+                    <td>{{ category.domain }}</td>
+                    <td>
+                        <a href="{{ path('app_category_show', {'id': category.id}) }}">Show</a>
+                        <a href="{{ path('app_category_edit', {'id': category.id}) }}">Edit</a>
+                    </td>
+                </tr>
+            {% else %}
+                <tr>
+                    <td colspan="5">No records found</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    {% endblock %}
+
+{% endblock %#}

@@ -1,0 +1,30 @@
+{% extends '@!EasyAdmin/layout.html.twig' %}
+
+{% block title %}New Category{% endblock %}
+
+{% block content %}
+    {% block content_header %}
+        <h1>Add Site</h1>
+        <br>
+    {% endblock %}
+
+    <form method="POST" action="/dashboard?menuIndex=2&routeName=app_category_new&submenuIndex=-1">
+        <label for="name">Name</label>
+        <br>
+        <input type="text" name="name" id="name" style="width: 20em;" placeholder="Name" />
+        <br>
+        <br>
+        <label for="domain">Domain</label>
+        <br>
+        <input type="text" name="domain" id="domain" style="width: 20em;" placeholder="Domain" />
+        <br>
+
+        <br>
+        <br>
+        <button name="btn" class="btn">{{ button_label|default('Save') }}</button>
+        <br>
+    </form>
+
+    <br>
+    <a href="{{ path('app_category_index') }}">Back to list</a>
+{% endblock %}

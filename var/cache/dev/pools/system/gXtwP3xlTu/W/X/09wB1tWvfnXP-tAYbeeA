@@ -1,0 +1,3 @@
+<?php //App%255CEntity%255CCategory%2524domain
+
+return [PHP_INT_MAX, []];

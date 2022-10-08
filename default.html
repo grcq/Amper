@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to your site!</title>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Poppins", sans-serif;
+        }
+
+        body {
+            background-color: white;
+            position: relative;
+            width: 100%;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            background: url("https://newmibridges.michigan.gov/resource/1657970840000/ISD_Icons/landing-page/group-3.svg")
+            no-repeat;
+            background-size: cover;
+            background-position: center;
+            color: white;
+        }
+
+        section {
+            max-width: 800px;
+            margin: 60px 150px;
+        }
+
+        section li, section p {
+            margin-left: 10px;
+            font-size: 16px;
+            margin-bottom: 8px;
+        }
+
+        h1 {
+            font-size: 38px;
+        }
+
+        .welcome {
+            font-size: 18px;
+        }
+
+        h1, .welcome {
+            margin-top: 30px;
+            margin-left: 50px;
+        }
+
+        section h2 {
+            font-size: 26px;
+            margin-bottom: 20px;
+        }
+
+        section ul {
+            margin-left: 60px; 
+        }
+
+        .footer {
+            opacity: 75%;
+            justify-content: center;
+            text-align: center;
+            margin-top: 100px;
+            color: black;
+        }
+    </style>
+</head>
+<body>
+    <h1>Welcome!</h1>
+    <p class="welcome">To fully set up your site, please follow these steps:</p>
+
+    <section>
+        <h2>Upload Files</h2>
+        <li>Install a FTP/SFTP client (FileZilla, WinSCP, etc...).</li>
+        <li>
+            Connect with the credentials:
+            <ul>
+                <li>IP Address: {{IP}}</li>
+                <li>Port: 22</li>
+                <li>Username and password is your SSH credentials.</li>
+            </ul>
+        </li>
+        <li>Go to the files path <strong>{{PATH}}</strong> and start uploading your files!</li>
+        <p><strong>NOTE: The main page must be index.html or index.php (customizable in Nginx Configuration File for this website)</strong></p>
+    </section>
+
+    <p class="footer"><strong>Thank you for using Amper Software!</strong></p>
+    <p style="text-align: center; color: black;">© 2022 - 2022</p>
+</body>
+</html>

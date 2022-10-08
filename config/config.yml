@@ -1,0 +1,8 @@
+easy_admin:
+    entities:
+        Website:
+            class: App\Entity\Website
+            form:
+                fields:
+                    - 'id'
+                    - { property: 'email', type: 'email', label: 'Contact' }

@@ -1,0 +1,31 @@
+{% extends '@!EasyAdmin/layout.html.twig' %}
+
+{% block title %}
+    <title>{{website_name}} | Websites</title>
+{% endblock %}
+
+{% block content %}
+    {% block content_header %}
+        <h2>Sites</h1>
+    {% endblock %}
+    {% if new_site == false %}
+        <br>
+        <a href="/dashboard?menuIndex=2&routeName=app_websites&submenuIndex=-1&newSite=true"><span class="fas fa-plus"></span> Add site</a>
+        <br>
+        <p>List of all sites:</p>
+        {% for site in sites %}
+            <br>
+            <a href="{{ site.path }}">{{ site.name }}</a>
+        {% endfor %}
+    {% else %}
+        <br>
+        <form method="POST" action="/dashboard?menuIndex=2&routeName=app_websites&submenuIndex=-1">
+            <label for="site_name">Site Name</label>
+            <br>
+            <input type="text" id="site_name" placeholder="Site Name" />
+
+            <br>
+            <button type="submit">Add Site</button>
+        </form>
+    {% endif %}
+{% endblock %}
