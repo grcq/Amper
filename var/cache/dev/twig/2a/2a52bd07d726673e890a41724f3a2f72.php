@@ -95,9 +95,7 @@ class __TwigTemplate_2e7ec049a228edd6d8011759e6f46065 extends Template
         $__internal_6f47bbe9983af81f1e7450e9a3e3768f->enter($__internal_6f47bbe9983af81f1e7450e9a3e3768f_prof = new \Twig\Profiler\Profile($this->getTemplateName(), "block", "content_header"));
 
         // line 5
-        echo "        <h1>";
-        echo twig_escape_filter($this->env, (isset($context["website_name"]) || array_key_exists("website_name", $context) ? $context["website_name"] : (function () { throw new RuntimeError('Variable "website_name" does not exist.', 5, $this->source); })()), "html", null, true);
-        echo "</h1>
+        echo "        <h1 style=\"margin-bottom: 20px; margin-top: 30px;\">Amper</h1>
     ";
         
         $__internal_6f47bbe9983af81f1e7450e9a3e3768f->leave($__internal_6f47bbe9983af81f1e7450e9a3e3768f_prof);
@@ -128,7 +126,7 @@ class __TwigTemplate_2e7ec049a228edd6d8011759e6f46065 extends Template
 
 {% block content %}
     {% block content_header %}
-        <h1>{{website_name}}</h1>
+        <h1 style=\"margin-bottom: 20px; margin-top: 30px;\">Amper</h1>
     {% endblock %}
 
     <br>

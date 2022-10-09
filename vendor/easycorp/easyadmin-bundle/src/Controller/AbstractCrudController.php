@@ -346,8 +346,11 @@ abstract class AbstractCrudController extends AbstractController implements Crud
                 fwrite($file, $c);
                 fclose($file);
 
-                exec("sudo systemctl stop nginx && sudot certbot certonly --standalone -d " . $domain);
-                exec("sudo systemctl start nginx");
+                $re = exec("sudo certbot certonly --nginx -d " . $domain);
+                if ($re = "Select the appropriate number [1-2] then [enter] (press 'c' to cancel):") {
+                    exec("echo '1'");
+                }
+                exec("sudo nginx -s reload");
 
                 $e = $context->getEntity()->getInstance();
                 $e->setFilesPath($filesPath);
@@ -427,7 +430,7 @@ abstract class AbstractCrudController extends AbstractController implements Crud
             $filesPath = $entityInstance->getFilesPath();
             static::deleteDir($filesPath);
             unlink("/etc/nginx/sites-enabled/" . str_replace(".", "_", $entityInstance->getDomain()) . ".conf");
-            exec("sudo systemctl restart nginx");
+            exec("sudo nginx -s reload");
         }
 
         if (null !== $referrer = $context->getReferrer()) {
