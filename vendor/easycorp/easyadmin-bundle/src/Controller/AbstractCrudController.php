@@ -346,10 +346,7 @@ abstract class AbstractCrudController extends AbstractController implements Crud
                 fwrite($file, $c);
                 fclose($file);
 
-                $re = exec("sudo certbot certonly --nginx -d " . $domain);
-                if ($re = "Select the appropriate number [1-2] then [enter] (press 'c' to cancel):") {
-                    exec("echo '1'");
-                }
+                $re = exec("sudo certbot certonly --nginx -d " . $domain . " --agree-tos --non-interactive --force-renewal --no-eff-email --email " . $this->getUser()->getEmail());
                 exec("sudo nginx -s reload");
 
                 $e = $context->getEntity()->getInstance();
