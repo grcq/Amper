@@ -54,6 +54,7 @@ use EasyCorp\Bundle\EasyAdminBundle\Security\Permission;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\Form\FormBuilderInterface;
+use Symfony\Component\Form\FormError;
 use Symfony\Component\Form\FormInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -319,9 +320,19 @@ abstract class AbstractCrudController extends AbstractController implements Crud
 
         $newForm = $this->createNewForm($context->getEntity(), $context->getCrud()->getNewFormOptions(), $context);
         $newForm->handleRequest($context->getRequest());
+        if (isset($_SESSION['NEW_SERVER_ERROR'])) {
+            unset($_SESSION['NEW_WEBSITE_ERROR']);
+        }
 
         $entityInstance = $newForm->getData();
         $context->getEntity()->setInstance($entityInstance);
+
+        $responseParameters = $this->configureResponseParameters(KeyValueStore::new([
+            'pageName' => Crud::PAGE_NEW,
+            'templateName' => 'crud/new',
+            'entity' => $context->getEntity(),
+            'new_form' => $newForm,
+        ]));
 
         if ($newForm->isSubmitted() && $newForm->isValid()) {
             $this->processUploadedFiles($newForm);
@@ -330,55 +341,53 @@ abstract class AbstractCrudController extends AbstractController implements Crud
             $this->container->get('event_dispatcher')->dispatch($event);
             $entityInstance = $event->getEntityInstance();
 
-            $this->persistEntity($this->container->get('doctrine')->getManagerForClass($context->getEntity()->getFqcn()), $entityInstance);
-
-            $this->container->get('event_dispatcher')->dispatch(new AfterEntityPersistedEvent($entityInstance));
-            $context->getEntity()->setInstance($entityInstance);
-
             if (static::getEntityFqcn() == "App\Entity\Website") {
                 $domain = $newForm->get("domain")->getData();
                 $name = $newForm->get("name")->getData();
 
-                $filesPath = "/var/www/" . strtolower(str_replace(" ", "_", $name));
-                if (!is_dir($filesPath)) {
-                    mkdir($filesPath);
+                if (checkdnsrr($domain, "A")) {
+                    $filesPath = "/var/www/" . strtolower(str_replace(" ", "_", $name));
+                    if (!is_dir($filesPath)) {
+                        mkdir($filesPath);
+                    }
+
+                    $content = shell_exec("cat " . ROOT_PATH . "/nginx.example.conf");
+                    $content = str_replace("<domain>", $domain, $content);
+                    $content = str_replace("<path>", $filesPath, $content);
+
+                    shell_exec("chmod 777 /etc/nginx/sites-enabled");
+                    $file = fopen("/etc/nginx/sites-enabled/" . str_replace(".", "_", $domain) . ".conf", "w");
+                    fwrite($file, $content);
+                    fclose($file);
+
+                    $file = fopen($filesPath . "/" . "index.html", "w");
+                    $c = shell_exec("cat " . ROOT_PATH . "/default.html");
+                    $c = str_replace("{{PATH}}", $filesPath, $c);
+                    $c = str_replace("{{IP}}", $_SERVER['SERVER_ADDR'], $c);
+
+                    fwrite($file, $c);
+                    fclose($file);
+
+                    $re = exec("sudo certbot --nginx -d " . $domain . " --agree-tos --non-interactive --force-renewal --no-eff-email --email " . $this->getUser()->getEmail());
+                    exec("sudo nginx -s reload");
+
+                    $e = $context->getEntity()->getInstance();
+                    $e->setFilesPath($filesPath);
+
+                    $this->updateEntity($this->container->get('doctrine')->getManagerForClass($context->getEntity()->getFqcn()), $e);
+                } else {
+                    $newForm->addError(new FormError("DNS Record for " . $domain . " pointing to '" . $_SERVER['SERVER_ADDR'] . "' on type 'A' was not found."));
+                    return $responseParameters;
                 }
 
-                $content = shell_exec("cat " . ROOT_PATH . "/nginx.example.conf");
-                $content = str_replace("<domain>", $domain, $content);
-                $content = str_replace("<path>", $filesPath, $content);
+                $this->persistEntity($this->container->get('doctrine')->getManagerForClass($context->getEntity()->getFqcn()), $entityInstance);
 
-                shell_exec("chmod 777 /etc/nginx/sites-enabled");
-                $file = fopen("/etc/nginx/sites-enabled/" . str_replace(".", "_", $domain) . ".conf", "w");
-                fwrite($file, $content);
-                fclose($file);
-
-                $file = fopen($filesPath . "/" . "index.html", "w");
-                $c = shell_exec("cat " . ROOT_PATH . "/default.html");
-                $c = str_replace("{{PATH}}", $filesPath, $c);
-                $c = str_replace("{{IP}}", $_SERVER['SERVER_ADDR'], $c);
-
-                fwrite($file, $c);
-                fclose($file);
-
-                $re = exec("sudo certbot --nginx -d " . $domain . " --agree-tos --non-interactive --force-renewal --no-eff-email --email " . $this->getUser()->getEmail());
-                exec("sudo nginx -s reload");
-
-                $e = $context->getEntity()->getInstance();
-                $e->setFilesPath($filesPath);
-
-                $this->updateEntity($this->container->get('doctrine')->getManagerForClass($context->getEntity()->getFqcn()), $e);
+                $this->container->get('event_dispatcher')->dispatch(new AfterEntityPersistedEvent($entityInstance));
+                $context->getEntity()->setInstance($entityInstance);
             }
 
             return $this->getRedirectResponseAfterSave($context, Action::NEW);
         }
-
-        $responseParameters = $this->configureResponseParameters(KeyValueStore::new([
-            'pageName' => Crud::PAGE_NEW,
-            'templateName' => 'crud/new',
-            'entity' => $context->getEntity(),
-            'new_form' => $newForm,
-        ]));
 
         $event = new AfterCrudActionEvent($context, $responseParameters);
         $this->container->get('event_dispatcher')->dispatch($event);
