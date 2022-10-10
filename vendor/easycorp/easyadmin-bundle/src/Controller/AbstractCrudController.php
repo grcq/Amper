@@ -116,6 +116,11 @@ abstract class AbstractCrudController extends AbstractController implements Crud
 
     public function index(AdminContext $context)
     {
+        $user = $this->getUser();
+        if ($user == null) {
+            return $this->redirect("/");
+        }
+
         $event = new BeforeCrudActionEvent($context);
         $this->container->get('event_dispatcher')->dispatch($event);
         if ($event->isPropagationStopped()) {
@@ -200,6 +205,11 @@ abstract class AbstractCrudController extends AbstractController implements Crud
 
     public function edit(AdminContext $context)
     {
+        $user = $this->getUser();
+        if ($user == null) {
+            return $this->redirect("/");
+        }
+
         $event = new BeforeCrudActionEvent($context);
         $this->container->get('event_dispatcher')->dispatch($event);
         if ($event->isPropagationStopped()) {
@@ -283,6 +293,11 @@ abstract class AbstractCrudController extends AbstractController implements Crud
 
     public function new(AdminContext $context)
     {
+        $user = $this->getUser();
+        if ($user == null) {
+            return $this->redirect("/");
+        }
+
         $event = new BeforeCrudActionEvent($context);
         $this->container->get('event_dispatcher')->dispatch($event);
         if ($event->isPropagationStopped()) {
@@ -346,14 +361,13 @@ abstract class AbstractCrudController extends AbstractController implements Crud
                 fwrite($file, $c);
                 fclose($file);
 
-                $re = exec("sudo certbot certonly --nginx -d " . $domain . " --agree-tos --non-interactive --force-renewal --no-eff-email --email " . $this->getUser()->getEmail());
+                $re = exec("sudo certbot --nginx -d " . $domain . " --agree-tos --non-interactive --force-renewal --no-eff-email --email " . $this->getUser()->getEmail());
                 exec("sudo nginx -s reload");
 
                 $e = $context->getEntity()->getInstance();
                 $e->setFilesPath($filesPath);
 
                 $this->updateEntity($this->container->get('doctrine')->getManagerForClass($context->getEntity()->getFqcn()), $e);
-                //shell_exec("cd public && bash install_site.bash " . str_replace(" ", "/", $newForm->get("files_path")->getData()) . " " . $newForm->get("domain")->getData());
             }
 
             return $this->getRedirectResponseAfterSave($context, Action::NEW);
@@ -377,6 +391,11 @@ abstract class AbstractCrudController extends AbstractController implements Crud
 
     public function delete(AdminContext $context)
     {
+        $user = $this->getUser();
+        if ($user == null) {
+            return $this->redirect("/");
+        }
+
         $event = new BeforeCrudActionEvent($context);
         $this->container->get('event_dispatcher')->dispatch($event);
         if ($event->isPropagationStopped()) {
@@ -457,6 +476,11 @@ abstract class AbstractCrudController extends AbstractController implements Crud
 
     public function batchDelete(AdminContext $context, BatchActionDto $batchActionDto): Response
     {
+        $user = $this->getUser();
+        if ($user == null) {
+            return $this->redirect("/");
+        }
+
         $event = new BeforeCrudActionEvent($context);
         $this->container->get('event_dispatcher')->dispatch($event);
         if ($event->isPropagationStopped()) {

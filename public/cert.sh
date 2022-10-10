@@ -1,0 +1,1 @@
+certbot certonly --nginx -d $1 --agree-tos --non-interactive --force-renewal --no-eff-email --email $2
