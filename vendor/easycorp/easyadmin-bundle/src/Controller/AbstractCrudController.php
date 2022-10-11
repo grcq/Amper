@@ -327,13 +327,6 @@ abstract class AbstractCrudController extends AbstractController implements Crud
         $entityInstance = $newForm->getData();
         $context->getEntity()->setInstance($entityInstance);
 
-        $responseParameters = $this->configureResponseParameters(KeyValueStore::new([
-            'pageName' => Crud::PAGE_NEW,
-            'templateName' => 'crud/new',
-            'entity' => $context->getEntity(),
-            'new_form' => $newForm,
-        ]));
-
         if ($newForm->isSubmitted() && $newForm->isValid()) {
             $this->processUploadedFiles($newForm);
 
@@ -345,49 +338,87 @@ abstract class AbstractCrudController extends AbstractController implements Crud
                 $domain = $newForm->get("domain")->getData();
                 $name = $newForm->get("name")->getData();
 
-                if (checkdnsrr($domain, "A")) {
-                    $filesPath = "/var/www/" . strtolower(str_replace(" ", "_", $name));
-                    if (!is_dir($filesPath)) {
-                        mkdir($filesPath);
+                $filesPath = "/var/www/" . strtolower(str_replace(" ", "_", $name));
+
+                $errors = [];
+
+                if (!checkdnsrr($domain, "A")) {
+                   array_push($error, "DNS Record for " . $domain . " pointing to '" . $_SERVER['SERVER_ADDR'] . "' on type 'A' was not found.");
+                }
+
+                $foundEntity = $this->container->get('doctrine')->getManagerForClass($context->getEntity()->getFqcn())->getRepository("App\Entity\Website")->findBy(['name' => $name]);
+                if ($foundEntity != null) {
+                    array_push($errors, "A website with that name already exists.");
+                } else {
+                    if (is_dir($filesPath)) {
+                        array_push($errors, "This directory already exists, please choose a different name.");
+                    }
+                }
+
+                $foundEntity = $this->container->get('doctrine')->getManagerForClass($context->getEntity()->getFqcn())->getRepository("App\Entity\Website")->findBy(['domain' => $domain]);
+                if ($foundEntity != null) {
+                    array_push($errors, "This domain is already in use.");
+                }
+
+                if (count($errors) > 0) {
+                    foreach ($errors as $error) {
+                        $newForm->addError(new FormError($error));
                     }
 
-                    $content = shell_exec("cat " . ROOT_PATH . "/nginx.example.conf");
-                    $content = str_replace("<domain>", $domain, $content);
-                    $content = str_replace("<path>", $filesPath, $content);
+                    $responseParameters = $this->configureResponseParameters(KeyValueStore::new([
+                        'pageName' => Crud::PAGE_NEW,
+                        'templateName' => 'crud/new',
+                        'entity' => $context->getEntity(),
+                        'new_form' => $newForm,
+                    ]));
 
-                    shell_exec("chmod 777 /etc/nginx/sites-enabled");
-                    $file = fopen("/etc/nginx/sites-enabled/" . str_replace(".", "_", $domain) . ".conf", "w");
-                    fwrite($file, $content);
-                    fclose($file);
-
-                    $file = fopen($filesPath . "/" . "index.html", "w");
-                    $c = shell_exec("cat " . ROOT_PATH . "/default.html");
-                    $c = str_replace("{{PATH}}", $filesPath, $c);
-                    $c = str_replace("{{IP}}", $_SERVER['SERVER_ADDR'], $c);
-
-                    fwrite($file, $c);
-                    fclose($file);
-
-                    $re = exec("sudo certbot --nginx -d " . $domain . " --agree-tos --non-interactive --force-renewal --no-eff-email --email " . $this->getUser()->getEmail());
-                    exec("sudo nginx -s reload");
-
-                    $e = $context->getEntity()->getInstance();
-                    $e->setFilesPath($filesPath);
-
-                    $this->updateEntity($this->container->get('doctrine')->getManagerForClass($context->getEntity()->getFqcn()), $e);
-                } else {
-                    $newForm->addError(new FormError("DNS Record for " . $domain . " pointing to '" . $_SERVER['SERVER_ADDR'] . "' on type 'A' was not found."));
                     return $responseParameters;
                 }
 
-                $this->persistEntity($this->container->get('doctrine')->getManagerForClass($context->getEntity()->getFqcn()), $entityInstance);
+                if (!is_dir($filesPath)) {
+                    mkdir($filesPath);
+                }
 
-                $this->container->get('event_dispatcher')->dispatch(new AfterEntityPersistedEvent($entityInstance));
-                $context->getEntity()->setInstance($entityInstance);
+                $content = shell_exec("cat " . ROOT_PATH . "/nginx.example.conf");
+                $content = str_replace("<domain>", $domain, $content);
+                $content = str_replace("<path>", $filesPath, $content);
+
+                shell_exec("chmod 777 /etc/nginx/sites-enabled");
+                $file = fopen("/etc/nginx/sites-enabled/" . str_replace(".", "_", $domain) . ".conf", "w");
+                fwrite($file, $content);
+                fclose($file);
+
+                $file = fopen($filesPath . "/" . "index.html", "w");
+                $c = shell_exec("cat " . ROOT_PATH . "/default.html");
+                $c = str_replace("{{PATH}}", $filesPath, $c);
+                $c = str_replace("{{IP}}", $_SERVER['SERVER_ADDR'], $c);
+
+                fwrite($file, $c);
+                fclose($file);
+
+                $re = exec("sudo certbot --nginx -d " . $domain . " --agree-tos --non-interactive --force-renewal --no-eff-email --email " . $this->getUser()->getEmail());
+                exec("sudo nginx -s reload");
+
+                $e = $context->getEntity()->getInstance();
+                $e->setFilesPath($filesPath);
+
+                $this->updateEntity($this->container->get('doctrine')->getManagerForClass($context->getEntity()->getFqcn()), $e);
             }
+
+            $this->persistEntity($this->container->get('doctrine')->getManagerForClass($context->getEntity()->getFqcn()), $entityInstance);
+
+            $this->container->get('event_dispatcher')->dispatch(new AfterEntityPersistedEvent($entityInstance));
+            $context->getEntity()->setInstance($entityInstance);
 
             return $this->getRedirectResponseAfterSave($context, Action::NEW);
         }
+
+        $responseParameters = $this->configureResponseParameters(KeyValueStore::new([
+            'pageName' => Crud::PAGE_NEW,
+            'templateName' => 'crud/new',
+            'entity' => $context->getEntity(),
+            'new_form' => $newForm,
+        ]));
 
         $event = new AfterCrudActionEvent($context, $responseParameters);
         $this->container->get('event_dispatcher')->dispatch($event);
